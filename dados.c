@@ -111,7 +111,6 @@ void dadosWriteEncadeamentoLista(DADOS *dados, FILE *bin) {
 /* ID SERVIDOR |======================================================================================================*/
 void dadosReadId(DADOS *dados, FILE *csv) {
     fscanf(csv,"%d",&dados->idServidor);
-    printf("ID: %d\n",dados->idServidor);
 }
 
 void dadosWriteId(DADOS *dados, FILE *bin) {
@@ -124,7 +123,6 @@ void dadosWriteId(DADOS *dados, FILE *bin) {
 /* SALARIO SERVIDOR |=================================================================================================*/
 void dadosReadSalario(DADOS *dados, FILE *csv) {
     fscanf(csv,"%lf",&dados->salarioServidor);
-    printf("Salario: %lf\n",dados->salarioServidor);
 }
 
 void dadosWriteSalario(DADOS *dados, FILE *bin) {
@@ -142,7 +140,6 @@ void dadosReadTelefone(DADOS *dados, FILE *csv) {
     }else {
         dadosCompleteWith(dados->telefoneServidor, '@', 14);
     }
-    printf("Telefone: %s \n",dados->telefoneServidor);
 }
 
 void dadosWriteTelefone(DADOS *dados, FILE *bin) {
@@ -167,8 +164,6 @@ void dadosReadNome(DADOS *dados, FILE *csv) {
             dados->tamanhoNome = tamNome+1;
         }
     }
-    if(dados->nomeServidor != NULL)printf("Nome: %s \n",dados->nomeServidor);
-    else printf("Nome eh null\n");
 }
 
 void dadosWriteNome(DADOS *dados, FILE *bin) {
@@ -195,8 +190,6 @@ void dadosReadCargo(DADOS *dados, FILE *csv) {
             dados->tamanhoCargo = tam+1;
         }
     }
-    if(dados->cargoServidor != NULL)printf("Cargo: %s \n",dados->cargoServidor);
-    else printf("Cargo eh null\n");
 }
 
 void dadosWriteCargo(DADOS *dados, FILE *bin) {

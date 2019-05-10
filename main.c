@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <math.h>
 #include "cabecalho.h"
 #include "dados.h"
 #include "paginas.h"
@@ -34,7 +35,7 @@ int main() {
 
             FILE* filecsv = fopen(filename,"r+");
             if(filecsv == NULL){
-                printf("Falha no carregamento do arquivo.");
+                printf("Falha no carregamento do arquivo.\n");
                 return -1;
             }
 
@@ -56,10 +57,8 @@ int main() {
             long tamArq = ftell(filecsv);
             fseek(filecsv,actual,SEEK_SET);
 
-            printf("Tamanho do arquivo : %ld\n",tamArq);
             while (ftell(filecsv) < tamArq) {
                 long maxRange = TAMPAG * (getPagina(gerente)+1);
-                printf("MaxRange: %ld\n",maxRange);
                 long registroIniBin = ftell(filebin);
                 long registroIniCsv = ftell(filecsv);
                 long registroFim = ftell(filebin);
@@ -69,9 +68,7 @@ int main() {
                 registroIniCsv = ftell(filecsv);
 
                 DADOS* regDados = dadosCria();
-                printf("\t - - - %ld - - - \n",ftell(filebin));
                 dadosReadAndWrite(regDados,filecsv,filebin);
-                printf("\t - - - %ld - - - \n\n\n",ftell(filebin));
                 dadosApaga(regDados);
 
                 registroFim = ftell(filebin);
@@ -100,7 +97,7 @@ int main() {
             fclose(filebin);
             fclose(filecsv);
 
-            printf("arquivoTrab1.bin");
+            printf("arquivoTrab1.bin\n");
 
             break;
 
@@ -119,9 +116,10 @@ int main() {
             //Vê a consistencia do arquivo
             char stats;
             fread(&stats, sizeof(char), 1, fileBin);
-            if(stats == '1') printf("Arquivo pronto para leitura.\n");
-            else if(stats == '0')printf("Arquivo Inconsistente !\n");
-            else printf("Ta bugado isso aqui\n");
+            if(stats == '0'){
+                printf("Falha no carregamento do arquivo.\n");
+                return -1;
+            }
             // Relativo a consistencia
 
 
@@ -138,9 +136,17 @@ int main() {
             fseek(fileBin,0,SEEK_END);
             long fimDoBin = ftell(fileBin);
             fseek(fileBin,posAtual,SEEK_SET);
-            // Realtivo a achar a ultima posicao do binario
+            if(posAtual == fimDoBin){
+                //Nao tem registros pra serem lidos
+                printf("Registro inexistente.\n");
+            }
+            // Realativo a achar a ultima posicao do binario
 
+            pagAtual++;
             while(ftell(fileBin) < fimDoBin) {
+
+                int maxRange = (pagAtual) * TAMPAG;
+
                 //Lê registro
                 char removido;
                 fread(&removido, sizeof(char), 1, fileBin);
@@ -206,9 +212,14 @@ int main() {
 
                 }
                 //Termina a leitura do registro
+
+                if (ftell(fileBin) > maxRange){
+                    pagAtual++;
+                }
+
             }
 
-            printf("Paginas Acessada: %d",(int)ftell(fileBin)/32000);
+            printf("Paginas Acessada: %d\n",(pagAtual));
 
             fclose(fileBin);
 
