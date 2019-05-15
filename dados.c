@@ -84,6 +84,14 @@ void dadosApaga(DADOS* dados){
 void dadosWriteRemovido(DADOS *dados, FILE *bin) {
     fwrite(&dados->removido, sizeof(char), 1, bin);
 }
+
+void dadosGetRemovido(DADOS* dados, FILE* bin){
+    fread(&dados->removido, sizeof(char), 1, bin);
+}
+
+char dadosReturnRemovido(DADOS* dados){
+    return dados->removido;
+}
 /*====================================================================================================================*/
 
 
@@ -93,8 +101,16 @@ void dadosWriteTamReg(DADOS *dados, FILE *bin) {
     fwrite(&dados->tamanhoRegistro, sizeof(int), 1, bin);
 }
 
+void dadosGetTamReg(DADOS* dados, FILE* bin){
+    fread(&dados->tamanhoRegistro, sizeof(int), 1, bin);
+}
+
 void dadosSetTamReg(DADOS *dados) {
     dados->tamanhoRegistro += (dados->tamanhoNome) + (dados->tamanhoCargo);
+}
+
+int dadosReturnTamReg(DADOS* dados){
+    return dados->tamanhoRegistro;
 }
 /*====================================================================================================================*/
 
@@ -103,6 +119,14 @@ void dadosSetTamReg(DADOS *dados) {
 /* ENCADEAMENTO LISTA |===============================================================================================*/
 void dadosWriteEncadeamentoLista(DADOS *dados, FILE *bin) {
     fwrite(&dados->encadeamentoLista, sizeof(long), 1, bin);
+}
+
+void dadosGetEncadeamentoLista(DADOS* dados, FILE *bin){
+    fread(&dados->encadeamentoLista, sizeof(long), 1, bin);
+}
+
+long dadosReturnEncadeamentoLista(DADOS* dados){
+    return dados->encadeamentoLista;
 }
 /*====================================================================================================================*/
 
@@ -113,8 +137,16 @@ void dadosReadId(DADOS *dados, FILE *csv) {
     fscanf(csv,"%d",&dados->idServidor);
 }
 
+void dadosGetId(DADOS* dados, FILE* bin){
+    fread(&dados->idServidor, sizeof(int), 1, bin);
+}
+
 void dadosWriteId(DADOS *dados, FILE *bin) {
     fwrite(&dados->idServidor, sizeof(int), 1, bin);
+}
+
+int dadosReturnId(DADOS* dados){
+    return dados->idServidor;
 }
 /*====================================================================================================================*/
 
@@ -125,8 +157,16 @@ void dadosReadSalario(DADOS *dados, FILE *csv) {
     fscanf(csv,"%lf",&dados->salarioServidor);
 }
 
+void dadosGetSalario(DADOS* dados, FILE* bin){
+    fread(&dados->salarioServidor, sizeof(double), 1, bin);
+}
+
 void dadosWriteSalario(DADOS *dados, FILE *bin) {
-    fwrite(&dados->salarioServidor, sizeof(double), 1 , bin);
+    fwrite(&dados->salarioServidor, sizeof(double), 1, bin);
+}
+
+double dadosReturnSalario(DADOS* dados){
+    return dados->salarioServidor;
 }
 /*====================================================================================================================*/
 
@@ -142,8 +182,16 @@ void dadosReadTelefone(DADOS *dados, FILE *csv) {
     }
 }
 
+void dadosGetTelefone(DADOS* dados, FILE* bin){
+    fread(dados->telefoneServidor, sizeof(char), 14, bin);
+}
+
 void dadosWriteTelefone(DADOS *dados, FILE *bin) {
     fwrite(&dados->telefoneServidor, sizeof(char), 14, bin);
+}
+
+char* dadosReturnTelefone(DADOS* dados){
+    return dados->telefoneServidor;
 }
 /*====================================================================================================================*/
 
@@ -166,12 +214,33 @@ void dadosReadNome(DADOS *dados, FILE *csv) {
     }
 }
 
+void dadosGetNome(DADOS* dados, FILE* bin){
+    fread(&dados->tamanhoNome, sizeof(int), 1, bin);
+
+    fseek(bin, sizeof(char),SEEK_CUR); // Ignora  a tag, supoe que ela ja foi lida corretamente
+
+    if(dados->nomeServidor != NULL){
+        printf("Erro, o nome ja foi inicializado!\n");
+        return;
+    }
+    dados->nomeServidor = (char *) malloc((dados->tamanhoNome) * sizeof(char));
+    fread(dados->nomeServidor, sizeof(char), dados->tamanhoNome, bin);
+}
+
 void dadosWriteNome(DADOS *dados, FILE *bin) {
     if (dados->nomeServidor != NULL) {
         fwrite(&dados->tamanhoNome, sizeof(int), 1, bin);
         fwrite(&dados->tagNome, sizeof(char), 1,bin);
         fwrite(dados->nomeServidor, sizeof(char), dados->tamanhoNome, bin);
     }
+}
+
+char* dadosReturnNome(DADOS* dados){
+    return dados->nomeServidor;
+}
+
+int dadosReturnSizeNome(DADOS* dados){
+    return dados->tamanhoNome;
 }
 /*====================================================================================================================*/
 
@@ -192,6 +261,19 @@ void dadosReadCargo(DADOS *dados, FILE *csv) {
     }
 }
 
+void dadosGetCargo(DADOS* dados, FILE* bin){
+    fread(&dados->tamanhoCargo, sizeof(int), 1, bin);
+
+    fseek(bin, sizeof(char), SEEK_CUR);  // Ignora  a tag, supoe que ela ja foi lida corretamente
+
+    if(dados->cargoServidor != NULL){
+        printf("Erro, o cargo ja foi inicializado!\n");
+        return;
+    }
+    dados->cargoServidor = (char*) malloc( dados->tamanhoCargo * sizeof(char));
+    fread(dados->cargoServidor, sizeof(char), dados->tamanhoCargo, bin);
+}
+
 void dadosWriteCargo(DADOS *dados, FILE *bin) {
     if (dados->cargoServidor != NULL) {
         fwrite(&dados->tamanhoCargo, sizeof(int), 1, bin);
@@ -200,7 +282,13 @@ void dadosWriteCargo(DADOS *dados, FILE *bin) {
     }
 }
 
+char* dadosReturnCargo(DADOS* dados){
+    return dados->cargoServidor;
+}
 
+int dadosReturnSizeCargo(DADOS* dados){
+    return dados->tamanhoCargo;
+}
 /*====================================================================================================================*/
 
 void dadosReadAndWrite(DADOS *dados, FILE *csv, FILE *bin) {

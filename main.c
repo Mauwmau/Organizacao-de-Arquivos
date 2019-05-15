@@ -4,20 +4,6 @@
 #include "dados.h"
 #include "paginas.h"
 
-void displayCampoVariavel(FILE* arquivo){
-    fseek(arquivo, -(sizeof(char)),SEEK_CUR);
-    fseek(arquivo, -(sizeof(int)),SEEK_CUR);
-    int tamanho;
-    fread(&tamanho, sizeof(int),1,arquivo);
-    fseek(arquivo, sizeof(char),SEEK_CUR);
-
-    char* campo = (char*)malloc(tamanho * sizeof(char));
-    fread(campo, sizeof(char),tamanho,arquivo);
-    printf("%d ",tamanho);
-    fwrite(campo, sizeof(char),tamanho,stdout);
-    free(campo);
-}
-
 int main() {
 
     int opcao = 0;
@@ -147,27 +133,30 @@ int main() {
 
                 int maxRange = (pagAtual) * TAMPAG;
 
+                DADOS* registro = dadosCria();
+
                 //Lê registro
-                char removido;
-                fread(&removido, sizeof(char), 1, fileBin);
+                dadosGetRemovido(registro,fileBin);
+                char removido = dadosReturnRemovido(registro);
+
                 if (removido == '-') {
                     fseek(fileBin, sizeof(int), SEEK_CUR);
                     fseek(fileBin, sizeof(long), SEEK_CUR);
 
-                    int id;
-                    fread(&id, sizeof(int), 1, fileBin);
+                    dadosGetId(registro,fileBin);
+                    int id = dadosReturnId(registro);
                     printf("%d ", id);
 
-                    double salario;
-                    fread(&salario, sizeof(double), 1, fileBin);
+                    dadosGetSalario(registro,fileBin);
+                    double salario = dadosReturnSalario(registro);
                     if (salario < 0) {
                        printf("         ");
                     } else {
                         printf("%.2lf ", salario);
                     }
 
-                    char telefone[14];
-                    fread(telefone, sizeof(char), 14, fileBin);
+                    dadosGetTelefone(registro,fileBin);
+                    char* telefone = dadosReturnTelefone(registro);
                     if (telefone[0] != '\0') {
                         fwrite(telefone, sizeof(char), 14, stdout);
                         printf(" ");
@@ -181,8 +170,12 @@ int main() {
                     fread(&tag, sizeof(char), 1, fileBin);
                     if (tag == 'n') {
                         // Normal
+                        fseek(fileBin, -sizeof(char), SEEK_CUR);
+                        fseek(fileBin, -sizeof(int), SEEK_CUR);
 
-                        displayCampoVariavel(fileBin);
+                        dadosGetNome(registro,fileBin);
+                        printf("%d ",dadosReturnSizeNome(registro));
+                        fwrite(dadosReturnNome(registro), sizeof(char), dadosReturnSizeNome(registro), stdout);
                         printf(" ");
 
                         fseek(fileBin, sizeof(int), SEEK_CUR);
@@ -191,7 +184,13 @@ int main() {
 
                         if (tagC == 'c') {
                             //Tem nome e tem cargo
-                            displayCampoVariavel(fileBin);
+                            fseek(fileBin, -sizeof(char), SEEK_CUR);
+                            fseek(fileBin, -sizeof(int), SEEK_CUR);
+
+                            dadosGetCargo(registro,fileBin);
+                            printf("%d ",dadosReturnSizeCargo(registro));
+                            fwrite(dadosReturnCargo(registro), sizeof(char), dadosReturnSizeCargo(registro), stdout);
+                            printf(" ");
 
                         } else {
                             //Tem nome mas nao tem cargo
@@ -201,7 +200,13 @@ int main() {
 
                     } else if (tag == 'c') {
                         // Não tem nome mas tem cargo
-                        displayCampoVariavel(fileBin);
+                        fseek(fileBin, -sizeof(char), SEEK_CUR);
+                        fseek(fileBin, -sizeof(int), SEEK_CUR);
+
+                        dadosGetCargo(registro,fileBin);
+                        printf("%d ",dadosReturnSizeCargo(registro));
+                        fwrite(dadosReturnCargo(registro), sizeof(char), dadosReturnSizeCargo(registro), stdout);
+                        printf(" ");
                     } else {
                         // Não tem nome nem cargo
                         fseek(fileBin, -sizeof(char), SEEK_CUR);
@@ -216,6 +221,8 @@ int main() {
                 if (ftell(fileBin) > maxRange){
                     pagAtual++;
                 }
+
+                dadosApaga(registro);
 
             }
 
