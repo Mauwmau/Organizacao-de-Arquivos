@@ -231,7 +231,9 @@ void dadosGetNome(DADOS* dados, FILE* bin){
     fread(&tag, sizeof(char),1,bin);
 
     if(tag == dados->tagNome) {
+        if(dados->nomeServidor == NULL){
         dados->nomeServidor = (char *) malloc((dados->tamanhoNome) * sizeof(char));
+        }
         fread(dados->nomeServidor, sizeof(char), dados->tamanhoNome, bin);
     }else{
         dados->tamanhoNome = 0;
@@ -282,7 +284,9 @@ void dadosGetCargo(DADOS* dados, FILE* bin){
     fread(&tag, sizeof(char), 1, bin);
 
     if (tag == dados->tagCargo) {
+        if(dados->cargoServidor == NULL){
         dados->cargoServidor = (char*) malloc( dados->tamanhoCargo * sizeof(char));
+        }
         fread(dados->cargoServidor, sizeof(char), dados->tamanhoCargo, bin);
     }else{
         dados->tamanhoCargo = 0;

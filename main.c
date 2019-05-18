@@ -103,15 +103,13 @@ int main() {
 
             long tamArq = PosFimArquivo(filecsv);
 
+            long registroIniBinAnterior;
+
             while (ftell(filecsv) < tamArq) {
                 long maxRange = TAMPAG * (getPagina(gerente)+1);
                 long registroIniBin = ftell(filebin);
                 long registroIniCsv = ftell(filecsv);
-                long registroFim = ftell(filebin);
-
-
-                registroIniBin = ftell(filebin);
-                registroIniCsv = ftell(filecsv);
+                long registroFim;
 
                 DADOS* regDados = dadosCria();
                 dadosReadAndWrite(regDados,filecsv,filebin);
@@ -124,14 +122,28 @@ int main() {
                     fseek(filebin, registroIniBin, SEEK_SET);
                     int qtdDeLixo = 0;
                     while (ftell(filebin) < maxRange) {
+                        qtdDeLixo++;
                         char trash = '@';
                         fwrite(&trash, sizeof(char), 1, filebin);
                     }
+
+                    registroFim = ftell(filebin);
+
+                    fseek(filebin, registroIniBinAnterior, SEEK_SET);
+                    dadosGetRemovido(regDados, filebin);
+                    dadosGetTamReg(regDados,filebin);
+                    int newTam = dadosReturnTamReg(regDados) + qtdDeLixo;
+                    dadosSetTamReg(regDados, newTam);
+                    fseek(filebin, -sizeof(int), SEEK_CUR);
+                    dadosWriteTamReg(regDados, filebin);
+                    fseek(filebin, registroFim, SEEK_SET);
 
                     fseek(filecsv, registroIniCsv, SEEK_SET);
 
                     addPagina(gerente);
                 }
+
+                registroIniBinAnterior = registroIniBin;
 
             }
 
@@ -397,7 +409,7 @@ int main() {
                                 hasFind = 1;
                             }else{
                                 /*dadosGetCargo(registro,filebin3);*/
-                                 fseek(filebin3, iniTam, SEEK_SET);
+                                fseek(filebin3, iniTam, SEEK_SET);
                                 dadosGetTamReg(registro,filebin3);
                                 fseek(filebin3, dadosReturnTamReg(registro), SEEK_CUR);
                             }
