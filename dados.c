@@ -25,7 +25,7 @@ struct _dados{
 
     double salarioServidor;
 
-    char telefoneServidor[14];
+    char telefoneServidor[15];
 
     int tamanhoNome;
     char tagNome;
@@ -44,7 +44,7 @@ DADOS* dadosCria(){
     if(d == NULL) return NULL;
 
     d->removido = '-';
-    d->tamanhoRegistro = 44;
+    d->tamanhoRegistro = 34;
     d->encadeamentoLista = -1;
 
     d->tamanhoNome = 0;
@@ -105,8 +105,17 @@ void dadosGetTamReg(DADOS* dados, FILE* bin){
     fread(&dados->tamanhoRegistro, sizeof(int), 1, bin);
 }
 
-void dadosSetTamReg(DADOS *dados) {
-    dados->tamanhoRegistro += (dados->tamanhoNome) + (dados->tamanhoCargo);
+void dadosSetTamReg(DADOS* dados, int tam){
+    dados->tamanhoRegistro = tam;
+}
+
+void dadosUpdateTamReg(DADOS *dados) {
+    if(dados->nomeServidor != NULL){
+        dados->tamanhoRegistro += 4/*Tamanho do campo tamanhoNome=4bytes*/ + 1/*Tamanho do campo TagNome=1byte*/ + dados->tamanhoNome;
+    }
+    if(dados->cargoServidor != NULL){
+        dados->tamanhoRegistro+= 4/*Tamanho do campo tamanhoCargo=4bytes*/ + 1/*Tamanho do campo TagCargo=1byte*/ + dados->tamanhoCargo;
+    }
 }
 
 int dadosReturnTamReg(DADOS* dados){
@@ -184,6 +193,7 @@ void dadosReadTelefone(DADOS *dados, FILE *csv) {
 
 void dadosGetTelefone(DADOS* dados, FILE* bin){
     fread(dados->telefoneServidor, sizeof(char), 14, bin);
+    dados->telefoneServidor[14] = '\0'; //Para fins de compracao de string, necessario adicionar \0
 }
 
 void dadosWriteTelefone(DADOS *dados, FILE *bin) {
@@ -208,23 +218,28 @@ void dadosReadNome(DADOS *dados, FILE *csv) {
 
             int i = strlen(dados->nomeServidor);
             dados->nomeServidor[i] = '\0';
-
             dados->tamanhoNome = tamNome+1;
         }
     }
 }
 
 void dadosGetNome(DADOS* dados, FILE* bin){
+
     fread(&dados->tamanhoNome, sizeof(int), 1, bin);
 
-    fseek(bin, sizeof(char),SEEK_CUR); // Ignora  a tag, supoe que ela ja foi lida corretamente
+    char tag;
+    fread(&tag, sizeof(char),1,bin);
 
-    if(dados->nomeServidor != NULL){
-        printf("Erro, o nome ja foi inicializado!\n");
-        return;
+    if(tag == dados->tagNome) {
+        if(dados->nomeServidor == NULL){
+        dados->nomeServidor = (char *) malloc((dados->tamanhoNome) * sizeof(char));
+        }
+        fread(dados->nomeServidor, sizeof(char), dados->tamanhoNome, bin);
+    }else{
+        dados->tamanhoNome = 0;
+        fseek(bin, -sizeof(char), SEEK_CUR);
+        fseek(bin, -sizeof(int), SEEK_CUR);
     }
-    dados->nomeServidor = (char *) malloc((dados->tamanhoNome) * sizeof(char));
-    fread(dados->nomeServidor, sizeof(char), dados->tamanhoNome, bin);
 }
 
 void dadosWriteNome(DADOS *dados, FILE *bin) {
@@ -262,16 +277,22 @@ void dadosReadCargo(DADOS *dados, FILE *csv) {
 }
 
 void dadosGetCargo(DADOS* dados, FILE* bin){
+
     fread(&dados->tamanhoCargo, sizeof(int), 1, bin);
 
-    fseek(bin, sizeof(char), SEEK_CUR);  // Ignora  a tag, supoe que ela ja foi lida corretamente
+    char tag;
+    fread(&tag, sizeof(char), 1, bin);
 
-    if(dados->cargoServidor != NULL){
-        printf("Erro, o cargo ja foi inicializado!\n");
-        return;
+    if (tag == dados->tagCargo) {
+        if(dados->cargoServidor == NULL){
+        dados->cargoServidor = (char*) malloc( dados->tamanhoCargo * sizeof(char));
+        }
+        fread(dados->cargoServidor, sizeof(char), dados->tamanhoCargo, bin);
+    }else{
+        dados->tamanhoCargo = 0;
+        fseek(bin, -sizeof(char), SEEK_CUR);
+        fseek(bin, -sizeof(int), SEEK_CUR);
     }
-    dados->cargoServidor = (char*) malloc( dados->tamanhoCargo * sizeof(char));
-    fread(dados->cargoServidor, sizeof(char), dados->tamanhoCargo, bin);
 }
 
 void dadosWriteCargo(DADOS *dados, FILE *bin) {
@@ -327,7 +348,7 @@ void dadosReadAndWrite(DADOS *dados, FILE *csv, FILE *bin) {
     dadosWriteCargo(dados,bin);
     //printf("Cargo: [%d](%c)%s \n",dados->tamanhoCargo,dados->tagCargo,dados->cargoServidor);
 
-    dadosSetTamReg(dados);
+    dadosUpdateTamReg(dados);
 
     long posFimRegistro = ftell(bin);
     fseek(bin,aux,SEEK_SET);
