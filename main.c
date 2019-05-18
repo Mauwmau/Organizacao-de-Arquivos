@@ -101,10 +101,7 @@ int main() {
             cabReadAndWrite(cabeca,filecsv,filebin);
             addPagina(gerente);
 
-            int actual = ftell(filecsv);
-            fseek(filecsv,0,SEEK_END);
-            long tamArq = ftell(filecsv);
-            fseek(filecsv,actual,SEEK_SET);
+            long tamArq = PosFimArquivo(filecsv);
 
             while (ftell(filecsv) < tamArq) {
                 long maxRange = TAMPAG * (getPagina(gerente)+1);
@@ -125,6 +122,7 @@ int main() {
                 if(registroFim > maxRange) {
 
                     fseek(filebin, registroIniBin, SEEK_SET);
+                    int qtdDeLixo = 0;
                     while (ftell(filebin) < maxRange) {
                         char trash = '@';
                         fwrite(&trash, sizeof(char), 1, filebin);
@@ -274,6 +272,8 @@ int main() {
             scanf("%s ",nomeDoCampo);
             scanf("%[^\n]",valor);
 
+            printf("%s\n", valor);
+
             //Verifica de arquivo pode ser aberto
             FILE* filebin3 = fopen(filename,"rb");
             if(filebin3 == NULL){
@@ -303,10 +303,13 @@ int main() {
                 cabGetCampo(cabeca,filebin3,i);
             }
 
-            //Vai pea primeira pagina de dados
+            //Vai para primeira pagina de dados
             fseek(filebin3, TAMPAG, SEEK_SET);
 
             long final = PosFimArquivo(filebin3);
+
+            //Variavel para verificar se algo foi encontrado
+            int hasFind = 0;
 
             //Percorre arquivo ate achar o final
             while(ftell(filebin3) < final){
@@ -329,11 +332,17 @@ int main() {
                             if(valorInt == dadosReturnId(registro)){
                                 fseek(filebin3, iniCampos, SEEK_SET);
                                 func3printCampos(cabeca,registro,filebin3);
+                                hasFind = 1;
                             }else{
+                                /*
                                 dadosGetSalario(registro,filebin3);
                                 dadosGetTelefone(registro,filebin3);
                                 dadosGetNome(registro,filebin3);
                                 dadosGetCargo(registro,filebin3);
+                                */
+                               fseek(filebin3, iniTam, SEEK_SET);
+                               dadosGetTamReg(registro,filebin3);
+                               fseek(filebin3, dadosReturnTamReg(registro), SEEK_CUR);
                             }
                             break;
 
@@ -344,10 +353,16 @@ int main() {
                             if(valorDouble == dadosReturnSalario(registro)){
                                 fseek(filebin3, iniCampos, SEEK_SET);
                                 func3printCampos(cabeca,registro,filebin3);
+                                hasFind = 1;
                             }else{
+                                /*
                                 dadosGetTelefone(registro,filebin3);
                                 dadosGetNome(registro,filebin3);
                                 dadosGetCargo(registro,filebin3);
+                                */
+                                fseek(filebin3, iniTam, SEEK_SET);
+                                dadosGetTamReg(registro,filebin3);
+                                fseek(filebin3, dadosReturnTamReg(registro), SEEK_CUR);
                             }
                             break;
 
@@ -358,9 +373,15 @@ int main() {
                             if(strcmp(valor, dadosReturnTelefone(registro)) == 0){
                                 fseek(filebin3, iniCampos, SEEK_SET);
                                 func3printCampos(cabeca,registro,filebin3);
+                                hasFind = 1;
                             }else{
+                                /*
                                 dadosGetNome(registro,filebin3);
                                 dadosGetCargo(registro,filebin3);
+                                */
+                                fseek(filebin3, iniTam, SEEK_SET);
+                                dadosGetTamReg(registro,filebin3);
+                                fseek(filebin3, dadosReturnTamReg(registro), SEEK_CUR);
                             }
                             break;
 
@@ -373,8 +394,12 @@ int main() {
                             if(dadosReturnNome(registro) != NULL && strcmp(valor, dadosReturnNome(registro)) == 0){
                                 fseek(filebin3, iniCampos, SEEK_SET);
                                 func3printCampos(cabeca,registro,filebin3);
+                                hasFind = 1;
                             }else{
-                                dadosGetCargo(registro,filebin3);
+                                /*dadosGetCargo(registro,filebin3);*/
+                                 fseek(filebin3, iniTam, SEEK_SET);
+                                dadosGetTamReg(registro,filebin3);
+                                fseek(filebin3, dadosReturnTamReg(registro), SEEK_CUR);
                             }
                             break;
 
@@ -388,6 +413,7 @@ int main() {
                             if(dadosReturnCargo(registro) != NULL && strcmp(valor, dadosReturnCargo(registro)) == 0){
                                 fseek(filebin3, iniCampos, SEEK_SET);
                                 func3printCampos(cabeca,registro,filebin3);
+                                hasFind = 1;
                             }
                             break;
 
@@ -401,11 +427,14 @@ int main() {
 
                 }
 
-
                 dadosApaga(registro);
             }
 
             apagaCabecalho(cabeca);
+
+            if(hasFind == 0){
+                printf("Registro Inexistente.\n");
+            }
 
             break;
 

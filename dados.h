@@ -30,8 +30,9 @@ char dadosReturnRemovido(DADOS* dados);
 
 void dadosWriteTamReg(DADOS* dados, FILE* bin);
 void dadosGetTamReg(DADOS* dados, FILE* bin);
-void dadosSetTamReg(DADOS* dados);
+void dadosSetTamReg(DADOS* dados, int tam);
 int dadosReturnTamReg(DADOS* dados);
+void dadosUpdateTamReg(DADOS* dados);
 
 void dadosWriteEncadeamentoLista(DADOS* dados, FILE *bin);
 void dadosGetEncadeamentoLista(DADOS* dados, FILE *bin);
