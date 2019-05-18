@@ -20,14 +20,18 @@ void writeCabecalho(CAB*,FILE* bin);
 
 
 void cabSetStatus(CAB*, char s, FILE* bin);
+void cabGetStatus(CAB*, FILE* bin);
 void cabWriteStatus(CAB*, FILE* bin);
 
 
+void cabGetTopoLista(CAB*, FILE* bin);
 void cabWriteTopoLista(CAB*, FILE* bin);
 
 
 void cabReadCampo(CAB*,FILE* csv, int qual);
+void cabGetCampo(CAB*, FILE* bin, int qual);
 void cabWriteCampo(CAB*, FILE* bin, int qual);
+char* cabReturnCampo(CAB*, int qual);
 
 void cabReadAndWrite(CAB*, FILE* csv, FILE* bin);
 

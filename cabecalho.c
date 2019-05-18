@@ -153,6 +153,11 @@ void cabSetStatus(CAB *cabecalho, char s, FILE *bin) {
     fseek(bin,temp,SEEK_SET);
 }
 
+void cabGetStatus(CAB* cabecalho, FILE* bin){
+    fseek(bin,0,SEEK_SET);
+    fread(&cabecalho->status, sizeof(char), 1, bin);
+}
+
 void cabWriteStatus(CAB *cabecalho, FILE *bin) {
     fwrite(&cabecalho->status, sizeof(char), 1, bin);
 }
@@ -161,6 +166,10 @@ void cabWriteStatus(CAB *cabecalho, FILE *bin) {
 
 
 /* REFENTE AO TOPO LISTA |============================================================================================*/
+void cabGetTopoLista(CAB* cabecalho, FILE* bin){
+    fread(&cabecalho->topoLista, sizeof(long), 1, bin);
+}
+
 void cabWriteTopoLista(CAB *cabecalho, FILE *bin) {
     fwrite(&cabecalho->topoLista,sizeof(long),1,bin);
 }
@@ -208,6 +217,44 @@ void cabReadCampo(CAB *cabecalho, FILE *csv, int qual) {
     }
 }
 
+void cabGetCampo(CAB* cabecalho, FILE* bin, int qual){
+    if(qual >= 1 && qual <= 5){
+
+        char campo[40];
+
+        fseek(bin, sizeof(char) + sizeof(long),SEEK_SET);   // Vai pro comeco do arquivo e pula o status e topoLista
+        long campoOffset = (qual-1) * (41 * sizeof(char));  // Define o Offset
+        fseek(bin, campoOffset, SEEK_CUR);                  // Vai pro campo desejado
+        fseek(bin, sizeof(char), SEEK_CUR);                 // Pula a tag
+
+        switch (qual){
+            case 1:
+                fread(cabecalho->desCampo1, sizeof(char), 40, bin);
+                break;
+
+            case 2:
+                fread(cabecalho->desCampo2, sizeof(char), 40, bin);
+                break;
+
+            case 3:
+                fread(cabecalho->desCampo3, sizeof(char), 40, bin);
+                break;
+
+            case 4:
+                fread(cabecalho->desCampo4, sizeof(char), 40, bin);
+                break;
+
+            case 5:
+                fread(cabecalho->desCampo5, sizeof(char), 40, bin);
+                break;
+
+            default:
+                printf("Erro ao ler campo %d\n", qual);
+        }
+
+    }
+}
+
 void cabWriteCampo(CAB *cabecalho, FILE *bin, int qual) {
     if(qual >= 1 && qual <=5) {
 
@@ -245,6 +292,28 @@ void cabWriteCampo(CAB *cabecalho, FILE *bin, int qual) {
     }
 }
 
+char* cabReturnCampo(CAB* cabecalho, int qual){
+    switch(qual){
+        case 1:
+            return cabecalho->desCampo1;
+
+        case 2:
+            return cabecalho->desCampo2;
+
+        case 3:
+            return cabecalho->desCampo3;
+
+        case 4:
+            return cabecalho->desCampo4;
+
+        case 5:
+            return cabecalho->desCampo5;
+
+        default:
+            printf("Erro ao ler campo %d\n", qual);
+    }
+    return NULL;
+}
 /*====================================================================================================================*/
 
 
