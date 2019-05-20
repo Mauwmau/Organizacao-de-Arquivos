@@ -27,6 +27,15 @@ long PosFimArquivo(FILE* arquivo){
     return fim;
 }
 
+int campoSelector(char* campo){
+    if(strcmp(campo,"idServidor") == 0) return 1;
+    else if(strcmp(campo,"salarioServidor") == 0) return 2;
+    else if(strcmp(campo,"telefoneServidor") == 0) return 3;
+    else if(strcmp(campo,"nomeServidor") == 0) return 4;
+    else if(strcmp(campo,"cargoServidor") == 0) return  5;
+    else return -1;
+}
+
 void func3printCampos(CAB* cabeca, DADOS* registro, FILE* filebin3){
     for(int i=1; i<=5; i++){
         printf("%s : ", cabReturnCampo(cabeca,i));
@@ -39,7 +48,7 @@ void func3printCampos(CAB* cabeca, DADOS* registro, FILE* filebin3){
             case 2:
                 dadosGetSalario(registro,filebin3);
                 if(dadosReturnSalario(registro) >= 0) {
-                    printf("%lf\n", dadosReturnSalario(registro));
+                    printf("%.2lf\n", dadosReturnSalario(registro));
                 }else{
                     printf("valor nao declarado\n");
                 }
@@ -274,7 +283,7 @@ int main() {
 
             }
 
-            printf("Paginas Acessada: %d\n",(pagAtual));
+            printf("Numero de paginas de disco acessadas: %d\n",(pagAtual));
 
             fclose(filebin2);
 
@@ -308,14 +317,8 @@ int main() {
                 return -1;
             }
 
-            //Vê se o campo digitado é valido
-            int nCampo = 0;
-            if(strcmp(nomeDoCampo,"idServidor") == 0) nCampo = 1;
-            else if(strcmp(nomeDoCampo,"salarioServidor") == 0) nCampo = 2;
-            else if(strcmp(nomeDoCampo,"telefoneServidor") == 0) nCampo = 3;
-            else if(strcmp(nomeDoCampo,"nomeServidor") == 0) nCampo = 4;
-            else if(strcmp(nomeDoCampo,"cargoServidor") == 0) nCampo = 5;
-            else nCampo = -1;
+            //Vê se o campo digitado é valido e transforma em uma valor integer
+            int nCampo = campoSelector(nomeDoCampo);
 
             //Lê o cabecalho
             cabeca = criaCabecalho();
@@ -328,11 +331,16 @@ int main() {
 
             long final = PosFimArquivo(filebin3);
 
-            //Variavel para verificar se algo foi encontrado
-            int hasFind = 0;
+            //Gerente de paginas
+            gerente = criaGerenciador();    //Lembrar de dar free no final
+            addPagina(gerente); //Primeira pagina = cabecalho
+            addPagina(gerente); //Pagina atual = 2
+            int lastSeeninPage = 0;
 
             //Percorre arquivo ate achar o final
             while(ftell(filebin3) < final){
+                long maxRange = (getPagina(gerente) + 1) * TAMPAG;
+
                 DADOS* registro = dadosCria();
 
                 dadosGetRemovido(registro,filebin3);
@@ -352,7 +360,7 @@ int main() {
                             if(valorInt == dadosReturnId(registro)){
                                 fseek(filebin3, iniCampos, SEEK_SET);
                                 func3printCampos(cabeca,registro,filebin3);
-                                hasFind = 1;
+                                lastSeeninPage = getPagina(gerente);
                             }else{
                                 /*
                                 dadosGetSalario(registro,filebin3);
@@ -373,7 +381,7 @@ int main() {
                             if(valorDouble == dadosReturnSalario(registro)){
                                 fseek(filebin3, iniCampos, SEEK_SET);
                                 func3printCampos(cabeca,registro,filebin3);
-                                hasFind = 1;
+                                lastSeeninPage = getPagina(gerente);
                             }else{
                                 /*
                                 dadosGetTelefone(registro,filebin3);
@@ -393,7 +401,7 @@ int main() {
                             if(strcmp(valor, dadosReturnTelefone(registro)) == 0){
                                 fseek(filebin3, iniCampos, SEEK_SET);
                                 func3printCampos(cabeca,registro,filebin3);
-                                hasFind = 1;
+                                lastSeeninPage = getPagina(gerente);
                             }else{
                                 /*
                                 dadosGetNome(registro,filebin3);
@@ -414,7 +422,7 @@ int main() {
                             if(dadosReturnNome(registro) != NULL && strcmp(valor, dadosReturnNome(registro)) == 0){
                                 fseek(filebin3, iniCampos, SEEK_SET);
                                 func3printCampos(cabeca,registro,filebin3);
-                                hasFind = 1;
+                                lastSeeninPage = getPagina(gerente);
                             }else{
                                 /*dadosGetCargo(registro,filebin3);*/
                                 fseek(filebin3, iniTam, SEEK_SET);
@@ -433,7 +441,7 @@ int main() {
                             if(dadosReturnCargo(registro) != NULL && strcmp(valor, dadosReturnCargo(registro)) == 0){
                                 fseek(filebin3, iniCampos, SEEK_SET);
                                 func3printCampos(cabeca,registro,filebin3);
-                                hasFind = 1;
+                                lastSeeninPage = getPagina(gerente);
                             }
                             break;
 
@@ -448,11 +456,18 @@ int main() {
                 }
 
                 dadosApaga(registro);
+
+                if(ftell(filebin3) >= maxRange){
+                    addPagina(gerente);
+                }
+
             }
 
             apagaCabecalho(cabeca);
 
-            if(hasFind == 0){
+            if(lastSeeninPage > 0){
+                printf("\nNumero de paginas de disco acessadas: %d\n", lastSeeninPage);
+            }else{
                 printf("Registro Inexistente.\n");
             }
 
