@@ -5,6 +5,20 @@
 #include "paginas.h"
 
 /*-------------------------------------------   UTILIDADE  -----------------------------------------------------------*/
+int verificaConsistencia(FILE* arquivo){
+    long atual = ftell(arquivo);    //Guarda a posicao atual
+    fseek(arquivo, 0, SEEK_SET);    //Vai pro inicio
+    char stats;
+    fread(&stats, sizeof(char), 1, arquivo);    //Faz leitura no arquivo
+    fseek(arquivo, atual, SEEK_SET);    //Volta pra posicao atual
+    if(stats == '0'){
+        printf("Falha no processamento do arquivo.\n");
+        return 0;
+    }else{
+        return 1;
+    }
+}
+
 long PosFimArquivo(FILE* arquivo){
     long atual = ftell(arquivo);
     fseek(arquivo,0,SEEK_END);
@@ -168,15 +182,12 @@ int main() {
             scanf("%s",filename);
             FILE* filebin2 = fopen(filename,"rb");
             if(filebin2 == NULL){
-                printf("Falha no carregamento do arquivo.\n");
+                printf("Falha no processamento do arquivo.\n");
                 return -1;
             }
 
             //Vê a consistencia do arquivo
-            char stats;
-            fread(&stats, sizeof(char), 1, filebin2);
-            if(stats == '0'){
-                printf("Falha no carregamento do arquivo.\n");
+            if(!verificaConsistencia(filebin2)){
                 return -1;
             }
             // Relativo a consistencia
@@ -192,12 +203,11 @@ int main() {
 
             // Encontra a ultima posição valida do arquivo binario e volta pra onde estava
             long posAtual = ftell(filebin2);
-            fseek(filebin2,0,SEEK_END);
-            long fimDoBin = ftell(filebin2);
-            fseek(filebin2,posAtual,SEEK_SET);
+            long fimDoBin = PosFimArquivo(filebin2);
             if(posAtual == fimDoBin){
                 //Nao tem registros pra serem lidos
                 printf("Registro inexistente.\n");
+                return -2;
             }
             // Realativo a achar a ultima posicao do binario
 
@@ -284,7 +294,7 @@ int main() {
             scanf("%s ",nomeDoCampo);
             scanf("%[^\n]",valor);
 
-            printf("%s\n", valor);
+            //printf("%s\n", valor);
 
             //Verifica de arquivo pode ser aberto
             FILE* filebin3 = fopen(filename,"rb");
@@ -294,9 +304,7 @@ int main() {
             }
 
             //Vê a consistencia do arquivo
-            fread(&stats, sizeof(char), 1, filebin3);
-            if(stats == '0'){
-                printf("Falha no carregamento do arquivo.\n");
+            if(!verificaConsistencia(filebin3)){
                 return -1;
             }
 
