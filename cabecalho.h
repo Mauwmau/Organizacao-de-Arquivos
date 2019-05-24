@@ -25,7 +25,9 @@ void cabWriteStatus(CAB*, FILE* bin);
 
 
 void cabGetTopoLista(CAB*, FILE* bin);
+void cabSetTopoLista(CAB*, long top);
 void cabWriteTopoLista(CAB*, FILE* bin);
+long cabReturnTopoLista(CAB*);
 
 
 void cabReadCampo(CAB*,FILE* csv, int qual);

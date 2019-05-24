@@ -3,6 +3,7 @@
 #include "cabecalho.h"
 #include "dados.h"
 #include "paginas.h"
+#include "monitorfuncs.h"
 
 /*-------------------------------------------   UTILIDADE  -----------------------------------------------------------*/
 int verificaConsistencia(FILE* arquivo){
@@ -272,6 +273,9 @@ int main() {
 
                     printf("\n");
 
+                } else if(removido == '*'){
+                    dadosGetTamReg(registro,filebin2);
+                    fseek(filebin2, dadosReturnTamReg(registro), SEEK_CUR); //Pula pro fim do registro
                 }
                 //Termina a leitura do registro
 
@@ -457,6 +461,9 @@ int main() {
                             return -4;
                     }
 
+                }else if(dadosReturnRemovido(registro) == '*'){
+                    dadosGetTamReg(registro,filebin3);
+                    fseek(filebin3, dadosReturnTamReg(registro), SEEK_CUR); //Pula pro fim do registro
                 }
 
                 dadosApaga(registro);
@@ -537,6 +544,8 @@ int main() {
                                     fwrite(&nullify, sizeof(char), 1, filebin4);//Marca registro com indicador de remocao
 
                                     dadosGetTamReg(registro,filebin4);
+                                    long posEncad = ftell(filebin4);
+                                    insereLista(registro, posEncad, filebin4);
                                     fseek(filebin4, dadosReturnTamReg(registro), SEEK_CUR); //Pula pro fim do registro
                                 }else{
                                     //Nao eh o id procurado
@@ -558,7 +567,12 @@ int main() {
                                     char nullify = '*';
                                     fwrite(&nullify, sizeof(char), 1, filebin4);//Marca registro com indicador de remocao
 
+
                                     dadosGetTamReg(registro,filebin4);
+
+                                    long posEncad = ftell(filebin4);
+                                    insereLista(registro, posEncad, filebin4);
+
                                     fseek(filebin4, dadosReturnTamReg(registro), SEEK_CUR); //Pula pro fim do registro
                                 }else{
                                     //Nao eh o salario procurado
@@ -581,6 +595,10 @@ int main() {
                                     fwrite(&nullify, sizeof(char), 1, filebin4);//Marca registro com indicador de remocao
 
                                     dadosGetTamReg(registro,filebin4);
+
+                                    long posEncad = ftell(filebin4);
+                                    insereLista(registro, posEncad, filebin4);
+
                                     fseek(filebin4, dadosReturnTamReg(registro), SEEK_CUR); //Pula pro fim do registro
                                 }else{
                                     //Nao eh o telefone procurado
@@ -604,6 +622,10 @@ int main() {
                                     fwrite(&nullify, sizeof(char), 1, filebin4);//Marca registro com indicador de remocao
 
                                     dadosGetTamReg(registro,filebin4);
+
+                                    long posEncad = ftell(filebin4);
+                                    insereLista(registro, posEncad, filebin4);
+
                                     fseek(filebin4, dadosReturnTamReg(registro), SEEK_CUR); //Pula pro fim do registro
                                 }else{
                                     //Nao eh o nome procurado
@@ -628,6 +650,10 @@ int main() {
                                     fwrite(&nullify, sizeof(char), 1, filebin4);//Marca registro com indicador de remocao
 
                                     dadosGetTamReg(registro,filebin4);
+
+                                    long posEncad = ftell(filebin4);
+                                    insereLista(registro, posEncad, filebin4);
+
                                     fseek(filebin4, dadosReturnTamReg(registro), SEEK_CUR); //Pula pro fim do registro
                                 }else{
                                     //Nao eh o cargo procurado
@@ -641,7 +667,8 @@ int main() {
                             default: printf("Campo digitado eh invalido!\n");
                         }
                     }else if(dadosReturnRemovido(registro) == '*'){
-
+                        dadosGetTamReg(registro,filebin4);
+                        fseek(filebin4, dadosReturnTamReg(registro), SEEK_CUR); //Pula pro fim do registro
                     }else{
                         printf("SOMETHING WRONG RIGHT HERE!\nRemovido=\"%c\"\n",dadosReturnRemovido(registro));
                     }
@@ -649,6 +676,8 @@ int main() {
                     dadosApaga(registro);
                 }
             }
+
+            binarioNaTela1(filebin4);
 
             //Be free
             for(int i=0; i<n; i++){
