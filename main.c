@@ -3,6 +3,7 @@
 #include "cabecalho.h"
 #include "dados.h"
 #include "paginas.h"
+#include "monitorfuncs.h"
 
 /*-------------------------------------------   UTILIDADE  -----------------------------------------------------------*/
 int verificaConsistencia(FILE* arquivo){
@@ -34,6 +35,11 @@ int campoSelector(char* campo){
     else if(strcmp(campo,"nomeServidor") == 0) return 4;
     else if(strcmp(campo,"cargoServidor") == 0) return  5;
     else return -1;
+}
+
+void preencheBin(FILE* bin, int qtd){
+    char trash = '@';
+    fwrite(&trash, sizeof(char), qtd, bin);
 }
 
 void func3printCampos(CAB* cabeca, DADOS* registro, FILE* filebin3){
@@ -272,6 +278,9 @@ int main() {
 
                     printf("\n");
 
+                } else if(removido == '*'){
+                    dadosGetTamReg(registro,filebin2);
+                    fseek(filebin2, dadosReturnTamReg(registro), SEEK_CUR); //Pula pro fim do registro
                 }
                 //Termina a leitura do registro
 
@@ -339,7 +348,7 @@ int main() {
 
             //Percorre arquivo ate achar o final
             while(ftell(filebin3) < final){
-                long maxRange = (getPagina(gerente) + 1) * TAMPAG;
+                long maxRange = getPagina(gerente) * TAMPAG;
 
                 DADOS* registro = dadosCria();
 
@@ -442,6 +451,10 @@ int main() {
                                 fseek(filebin3, iniCampos, SEEK_SET);
                                 func3printCampos(cabeca,registro,filebin3);
                                 lastSeeninPage = getPagina(gerente);
+                            }else{
+                                fseek(filebin3, iniTam, SEEK_SET);
+                                dadosGetTamReg(registro,filebin3);
+                                fseek(filebin3, dadosReturnTamReg(registro), SEEK_CUR);
                             }
                             break;
 
@@ -453,6 +466,9 @@ int main() {
                             return -4;
                     }
 
+                }else if(dadosReturnRemovido(registro) == '*'){
+                    dadosGetTamReg(registro,filebin3);
+                    fseek(filebin3, dadosReturnTamReg(registro), SEEK_CUR); //Pula pro fim do registro
                 }
 
                 dadosApaga(registro);
@@ -466,12 +482,240 @@ int main() {
             apagaCabecalho(cabeca);
 
             if(lastSeeninPage > 0){
-                printf("\nNumero de paginas de disco acessadas: %d\n", lastSeeninPage);
+                printf("\nNumero de paginas de disco acessadas: %d\n", getPagina(gerente));
             }else{
                 printf("Registro Inexistente.\n");
             }
 
             break;
+
+        case 4:
+
+            int n;
+            scanf("%s %d", filename, &n);
+
+            char** valores = (char**) malloc(sizeof(char*) * n);    //Aloca um vetor de n strings
+            int* nCampos = (int*) malloc(sizeof(int) * n);          //Aloca um vetor de n integers
+
+            for(int i = 0; i<n; i++){
+                scanf("%s", nomeDoCampo);
+
+                valores[i] = (char*)malloc(sizeof(char) * 80);      //Aloca a string, tamanho maximo: 80 caracteres
+                scan_quote_string(valores[i]);
+
+                nCampos[i] = campoSelector(nomeDoCampo);
+
+            }
+
+            FILE* filebin4 = fopen(filename,"rb+");
+            if(filebin4 == NULL){
+                printf("Falha no processamento do arquivo.\n");
+                return -1;
+            }
+
+            if(!verificaConsistencia(filebin4)){
+                return -1;
+            }
+
+            for (int i=0; i<n; i++) {
+
+                //Pula pra segunda pagina
+                fseek(filebin4, TAMPAG, SEEK_SET);
+
+                final = PosFimArquivo(filebin4);
+
+                while(ftell(filebin4) < final){
+                    DADOS* registro = dadosCria();
+
+                    long iniReg = ftell(filebin4);
+
+                    dadosGetRemovido(registro,filebin4);
+                    if(dadosReturnRemovido(registro) == '-'){
+                        long iniTam = ftell(filebin4);
+                        dadosGetTamReg(registro,filebin4);
+
+                        dadosGetEncadeamentoLista(registro,filebin4);
+                        long iniCampos = ftell(filebin4);
+
+                        switch (nCampos[i]){
+                            case 1:
+                                int valorInt = atoi(valores[i]);
+                                dadosGetId(registro,filebin4);
+                                if(dadosReturnId(registro) == valorInt){
+                                    //Achou id
+                                    fseek(filebin4, iniReg, SEEK_SET);  //Vai pro inicio do registro
+
+                                    char nullify = '*';
+                                    fwrite(&nullify, sizeof(char), 1, filebin4);//Marca registro com indicador de remocao
+
+                                    dadosGetTamReg(registro,filebin4);
+
+                                    long posEncad = ftell(filebin4);
+                                    insereLista(registro, posEncad, filebin4);
+
+                                    dadosGetEncadeamentoLista(registro,filebin4);   //Pula o encadeamentoLista, lendo ele
+                                    preencheBin(filebin4, dadosReturnTamReg(registro));
+                                    fseek(filebin4, posEncad, SEEK_SET);    //Volta pra posicao logo depois do campo tamanho
+
+                                    fseek(filebin4, dadosReturnTamReg(registro), SEEK_CUR); //Pula pro fim do registro
+                                }else{
+                                    //Nao eh o id procurado
+                                    fseek(filebin4, iniTam, SEEK_SET);  //Vai pro campo de tamanho do registro
+                                    dadosGetTamReg(registro,filebin4);
+
+                                    fseek(filebin4, dadosReturnTamReg(registro), SEEK_CUR); //Pula pro fim do registro
+                                }
+                                break;
+
+                            case 2:
+                                double valorDouble = atof(valores[i]);
+                                dadosGetId(registro,filebin4);
+                                dadosGetSalario(registro,filebin4);
+                                if(dadosReturnSalario(registro) == valorDouble){
+                                    //Achou Salario
+                                    fseek(filebin4, iniReg, SEEK_SET);  //Vai pro inicio do registro
+
+                                    char nullify = '*';
+                                    fwrite(&nullify, sizeof(char), 1, filebin4);//Marca registro com indicador de remocao
+
+
+                                    dadosGetTamReg(registro,filebin4);
+
+                                    long posEncad = ftell(filebin4);
+                                    insereLista(registro, posEncad, filebin4);
+
+                                    dadosGetEncadeamentoLista(registro,filebin4);   //Pula o encadeamentoLista, lendo ele
+                                    preencheBin(filebin4, dadosReturnTamReg(registro));
+                                    fseek(filebin4, posEncad, SEEK_SET);    //Volta pra posicao logo depois do campo tamanho
+
+                                    fseek(filebin4, dadosReturnTamReg(registro), SEEK_CUR); //Pula pro fim do registro
+                                }else{
+                                    //Nao eh o salario procurado
+                                    fseek(filebin4, iniTam, SEEK_SET);  //Vai pro campo de tamanho do registro
+                                    dadosGetTamReg(registro,filebin4);
+
+                                    fseek(filebin4, dadosReturnTamReg(registro), SEEK_CUR); //Pula pro fim do registro
+                                }
+                                break;
+
+                            case 3:
+                                dadosGetId(registro,filebin4);
+                                dadosGetSalario(registro,filebin4);
+                                dadosGetTelefone(registro,filebin4);
+                                if(strcmp(dadosReturnTelefone(registro),valores[i]) == 0){
+                                    //Achou telefone
+                                    fseek(filebin4, iniReg, SEEK_SET); //Vai pro inicio do registro
+
+                                    char nullify = '*';
+                                    fwrite(&nullify, sizeof(char), 1, filebin4);//Marca registro com indicador de remocao
+
+                                    dadosGetTamReg(registro,filebin4);
+
+                                    long posEncad = ftell(filebin4);
+                                    insereLista(registro, posEncad, filebin4);
+
+                                    dadosGetEncadeamentoLista(registro,filebin4);   //Pula o encadeamentoLista, lendo ele
+                                    preencheBin(filebin4, dadosReturnTamReg(registro));
+                                    fseek(filebin4, posEncad, SEEK_SET);    //Volta pra posicao logo depois do campo tamanho
+
+                                    fseek(filebin4, dadosReturnTamReg(registro), SEEK_CUR); //Pula pro fim do registro
+                                }else{
+                                    //Nao eh o telefone procurado
+                                    fseek(filebin4, iniTam, SEEK_SET);  //Vai pro campo de tamanho do registro
+                                    dadosGetTamReg(registro,filebin4);
+
+                                    fseek(filebin4, dadosReturnTamReg(registro), SEEK_CUR); //Pula pro fim do registro
+                                }
+                                break;
+
+                            case 4:
+                                dadosGetId(registro,filebin4);
+                                dadosGetSalario(registro,filebin4);
+                                dadosGetTelefone(registro,filebin4);
+                                dadosGetNome(registro,filebin4);
+                                if((dadosReturnNome(registro)!=NULL && strcmp(dadosReturnNome(registro),valores[i]) == 0)
+                                    ||(strcmp(valores[i],"") == 0 && dadosReturnNome(registro) == NULL)){
+                                    //Achou nome
+                                    fseek(filebin4, iniReg, SEEK_SET); //Vai pro inicio do registro
+
+                                    char nullify = '*';
+                                    fwrite(&nullify, sizeof(char), 1, filebin4);//Marca registro com indicador de remocao
+
+                                    dadosGetTamReg(registro,filebin4);
+
+                                    long posEncad = ftell(filebin4);
+                                    insereLista(registro, posEncad, filebin4);
+
+                                    dadosGetEncadeamentoLista(registro,filebin4);   //Pula o encadeamentoLista, lendo ele
+                                    preencheBin(filebin4, dadosReturnTamReg(registro));
+                                    fseek(filebin4, posEncad, SEEK_SET);    //Volta pra posicao logo depois do campo tamanho
+
+                                    fseek(filebin4, dadosReturnTamReg(registro), SEEK_CUR); //Pula pro fim do registro
+                                }else{
+                                    //Nao eh o nome procurado
+                                    fseek(filebin4, iniTam, SEEK_SET);  //Vai pro campo de tamanho do registro
+                                    dadosGetTamReg(registro,filebin4);
+
+                                    fseek(filebin4, dadosReturnTamReg(registro), SEEK_CUR); //Pula pro fim do registro
+                                }
+                                break;
+
+                            case 5:
+                                dadosGetId(registro,filebin4);
+                                dadosGetSalario(registro,filebin4);
+                                dadosGetTelefone(registro,filebin4);
+                                dadosGetNome(registro,filebin4);
+                                dadosGetCargo(registro,filebin4);
+                                if((dadosReturnCargo(registro)!=NULL && strcmp(dadosReturnCargo(registro),valores[i]) == 0)
+                                    || (strcmp(valores[i],"") == 0 && dadosReturnCargo(registro))){
+                                    //Achou cargo
+                                    fseek(filebin4, iniReg, SEEK_SET); //Vai pro inicio do registro
+
+                                    char nullify = '*';
+                                    fwrite(&nullify, sizeof(char), 1, filebin4);//Marca registro com indicador de remocao
+
+                                    dadosGetTamReg(registro,filebin4);
+
+                                    long posEncad = ftell(filebin4);
+                                    insereLista(registro, posEncad, filebin4);
+
+                                    dadosGetEncadeamentoLista(registro,filebin4);   //Pula o encadeamentoLista, lendo ele
+                                    preencheBin(filebin4, dadosReturnTamReg(registro));
+                                    fseek(filebin4, posEncad, SEEK_SET);    //Volta pra posicao logo depois do campo tamanho
+
+                                    fseek(filebin4, dadosReturnTamReg(registro), SEEK_CUR); //Pula pro fim do registro
+                                }else{
+                                    //Nao eh o cargo procurado
+                                    fseek(filebin4, iniTam, SEEK_SET);  //Vai pro campo de tamanho do registro
+                                    dadosGetTamReg(registro,filebin4);
+
+                                    fseek(filebin4, dadosReturnTamReg(registro), SEEK_CUR); //Pula pro fim do registro
+                                }
+                                break;
+
+                            default: printf("Campo digitado eh invalido!\n");
+                        }
+                    }else if(dadosReturnRemovido(registro) == '*'){
+                        dadosGetTamReg(registro,filebin4);
+                        fseek(filebin4, dadosReturnTamReg(registro), SEEK_CUR); //Pula pro fim do registro
+                    }else{
+                        printf("SOMETHING WRONG RIGHT HERE!\nRemovido=\"%c\"\n",dadosReturnRemovido(registro));
+                    }
+
+                    dadosApaga(registro);
+                }
+            }
+
+            binarioNaTela1(filebin4);
+
+            //Be free
+            for(int i=0; i<n; i++){
+                free(valores[i]);
+            }
+            free(valores);
+            free(nCampos);
+
+            fclose(filebin4);
 
         default:
             opcao = 0;

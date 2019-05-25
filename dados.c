@@ -3,6 +3,7 @@
 //
 
 #include "dados.h"
+#include "cabecalho.h"
 
 /*-------------------------------------------   UTILIDADE  -----------------------------------------------------------*/
 /*Completa uma string(char* string) de tamanho fixo(int size) com determinado caracter(char what)*/
@@ -89,6 +90,10 @@ void dadosGetRemovido(DADOS* dados, FILE* bin){
     fread(&dados->removido, sizeof(char), 1, bin);
 }
 
+void dadosSetRemovido(DADOS* dados, char rem){
+    dados->removido = rem;
+}
+
 char dadosReturnRemovido(DADOS* dados){
     return dados->removido;
 }
@@ -111,10 +116,10 @@ void dadosSetTamReg(DADOS* dados, int tam){
 
 void dadosUpdateTamReg(DADOS *dados) {
     if(dados->nomeServidor != NULL){
-        dados->tamanhoRegistro += 4/*Tamanho do campo tamanhoNome=4bytes*/ + 1/*Tamanho do campo TagNome=1byte*/ + dados->tamanhoNome;
+        dados->tamanhoRegistro += 4/*Tamanho do campo tamanhoNome=4bytes*/ +  dados->tamanhoNome;
     }
     if(dados->cargoServidor != NULL){
-        dados->tamanhoRegistro+= 4/*Tamanho do campo tamanhoCargo=4bytes*/ + 1/*Tamanho do campo TagCargo=1byte*/ + dados->tamanhoCargo;
+        dados->tamanhoRegistro+= 4/*Tamanho do campo tamanhoCargo=4bytes*/ + dados->tamanhoCargo;
     }
 }
 
@@ -134,8 +139,88 @@ void dadosGetEncadeamentoLista(DADOS* dados, FILE *bin){
     fread(&dados->encadeamentoLista, sizeof(long), 1, bin);
 }
 
+void dadosSetEncadeamentoLista(DADOS* dados, long encad){
+    dados->encadeamentoLista = encad;
+}
+
 long dadosReturnEncadeamentoLista(DADOS* dados){
     return dados->encadeamentoLista;
+}
+
+void insereLista(DADOS* dados, long posDados, FILE* bin){
+    fseek(bin, sizeof(char), SEEK_SET); //Vai pro comeco do bin
+    long atual = ftell(bin);         //Pega a posicao de onde esta o topo lista
+    long proximo;
+    long anterior = -1;
+    int tamanhodoreg = 9999;
+    fread(&proximo, sizeof(long), 1, bin);  //Lê o topo lista
+
+    //Enquanto nao achar o fim da lista, ou o
+    //tamanho do registro lido for menor que o registro
+    // a ser inserido
+    while (proximo != -1 && tamanhodoreg > dadosReturnTamReg(dados)){
+        fseek(bin, proximo, SEEK_SET);  //Vai pra posicao do proximo encadeamentoLista
+        fseek(bin, -sizeof(int), SEEK_CUR); //Volta o tamanho de um integer
+        fread(&tamanhodoreg, sizeof(int), 1, bin);  //Lê o integer tamanho do registro atual
+        anterior = atual;   //O anterior guarda a posicao do atual antes de ser atualizado
+        atual = ftell(bin);  //Marca a posicao do encadeamentoLista do registro atual
+        fread(&proximo, sizeof(long), 1, bin);  //Lê o encadeamentoLista para ir pro proximo
+    }
+    if (tamanhodoreg > dadosReturnTamReg(dados)) {
+        //Encontrou alguem maior, insere no meio
+        fseek(bin, anterior, SEEK_SET);
+        fwrite(&posDados, sizeof(long), 1, bin);
+
+        fseek(bin, atual, SEEK_SET);
+        fread(&proximo, sizeof(long), 1, bin);
+
+        dados->encadeamentoLista = proximo;
+    } else {
+        //Não encontrou ninguem maior, insere no final
+
+        dados->encadeamentoLista = proximo;     //Guarda o encadeamentoLista do proximo registro no registro que deve ser
+        // inserido
+
+        fseek(bin, atual, SEEK_SET);             //Volta pra posicao encadeamentoLista do registro atual
+        fwrite(&posDados, sizeof(long), 1, bin);    //Guarda no atual o a posicao do que se deseja inserir
+
+    }
+
+    fseek(bin, posDados, SEEK_SET);             //Vai pro registro inserido
+    dadosWriteEncadeamentoLista(dados, bin);    //Escreve no atual qual o seu encadeamentoLista(= proximo)
+
+    fseek(bin, posDados, SEEK_SET); //Só pra voltar pra posicao do registro antes de entrar na funcao
+}
+
+long removeLista(DADOS* dados, FILE* bin){
+    long anterior = -1;
+    long atual;
+    long proximo;
+    int tamanhodoreg = -1;
+
+    fseek(bin, sizeof(char), SEEK_SET); //Vai pro topoLista
+
+    atual = ftell(bin);
+    fread(&proximo, sizeof(long), 1, bin);
+
+    while(proximo != -1 && tamanhodoreg < dadosReturnTamReg(dados)){
+        fseek(bin , proximo, SEEK_SET);
+        fseek(bin, -sizeof(int), SEEK_CUR);
+        fread(&tamanhodoreg, sizeof(int), 1, bin);
+        anterior = atual;
+        atual = ftell(bin);
+        fread(&proximo, sizeof(long), 1, bin);
+    }
+
+    if(tamanhodoreg != -1 && tamanhodoreg < dadosReturnTamReg(dados)){
+        fseek(bin, anterior, SEEK_SET);
+        fwrite(&proximo, sizeof(long), 1, bin);
+        return atual;
+    }else{
+        fseek(bin, 0, SEEK_END);
+        return ftell(bin);
+    }
+
 }
 /*====================================================================================================================*/
 
@@ -148,6 +233,10 @@ void dadosReadId(DADOS *dados, FILE *csv) {
 
 void dadosGetId(DADOS* dados, FILE* bin){
     fread(&dados->idServidor, sizeof(int), 1, bin);
+}
+
+void dadosSetId(DADOS* dados, int id){
+    dados->idServidor = id;
 }
 
 void dadosWriteId(DADOS *dados, FILE *bin) {
@@ -168,6 +257,10 @@ void dadosReadSalario(DADOS *dados, FILE *csv) {
 
 void dadosGetSalario(DADOS* dados, FILE* bin){
     fread(&dados->salarioServidor, sizeof(double), 1, bin);
+}
+
+void dadosSetSalario(DADOS* dados, double sal){
+    dados->salarioServidor = sal;
 }
 
 void dadosWriteSalario(DADOS *dados, FILE *bin) {
@@ -196,6 +289,10 @@ void dadosGetTelefone(DADOS* dados, FILE* bin){
     dados->telefoneServidor[14] = '\0'; //Para fins de compracao de string, necessario adicionar \0
 }
 
+void dadosSetTelefone(DADOS* dados, char* tel){
+    strcpy(dados->telefoneServidor, tel);
+}
+
 void dadosWriteTelefone(DADOS *dados, FILE *bin) {
     fwrite(&dados->telefoneServidor, sizeof(char), 14, bin);
 }
@@ -218,7 +315,7 @@ void dadosReadNome(DADOS *dados, FILE *csv) {
 
             int i = strlen(dados->nomeServidor);
             dados->nomeServidor[i] = '\0';
-            dados->tamanhoNome = tamNome+1;
+            dados->tamanhoNome = tamNome+ 1/*\0*/ +1/*tagNome*/ ;
         }
     }
 }
@@ -232,9 +329,9 @@ void dadosGetNome(DADOS* dados, FILE* bin){
 
     if(tag == dados->tagNome) {
         if(dados->nomeServidor == NULL){
-        dados->nomeServidor = (char *) malloc((dados->tamanhoNome) * sizeof(char));
+        dados->nomeServidor = (char *) malloc((dados->tamanhoNome-1) * sizeof(char));
         }
-        fread(dados->nomeServidor, sizeof(char), dados->tamanhoNome, bin);
+        fread(dados->nomeServidor, sizeof(char), dados->tamanhoNome-1, bin);
     }else{
         dados->tamanhoNome = 0;
         fseek(bin, -sizeof(char), SEEK_CUR);
@@ -242,11 +339,19 @@ void dadosGetNome(DADOS* dados, FILE* bin){
     }
 }
 
+void dadosSetNome(DADOS* dados, char* nome){
+    strcpy(dados->nomeServidor, nome);
+
+    dados->tamanhoNome = strlen(dados->nomeServidor) + 1 + 1;   //Quantidade de caracteres, inclui \0
+                                                    //Exemplo: {o,i,\0} -> tamanho:2, quantidade de 'elementos':3
+                                                    // + tagNome
+}
+
 void dadosWriteNome(DADOS *dados, FILE *bin) {
     if (dados->nomeServidor != NULL) {
         fwrite(&dados->tamanhoNome, sizeof(int), 1, bin);
         fwrite(&dados->tagNome, sizeof(char), 1,bin);
-        fwrite(dados->nomeServidor, sizeof(char), dados->tamanhoNome, bin);
+        fwrite(dados->nomeServidor, sizeof(char), dados->tamanhoNome-1, bin);
     }
 }
 
@@ -255,7 +360,7 @@ char* dadosReturnNome(DADOS* dados){
 }
 
 int dadosReturnSizeNome(DADOS* dados){
-    return dados->tamanhoNome;
+    return dados->tamanhoNome-1;
 }
 /*====================================================================================================================*/
 
@@ -271,7 +376,7 @@ void dadosReadCargo(DADOS *dados, FILE *csv) {
             strcpy(dados->cargoServidor, buffer);
             int i = strlen(dados->cargoServidor);
             dados->cargoServidor[i] = '\0';
-            dados->tamanhoCargo = tam+1;
+            dados->tamanhoCargo = tam+1+1;
         }
     }
 }
@@ -285,9 +390,9 @@ void dadosGetCargo(DADOS* dados, FILE* bin){
 
     if (tag == dados->tagCargo) {
         if(dados->cargoServidor == NULL){
-        dados->cargoServidor = (char*) malloc( dados->tamanhoCargo * sizeof(char));
+        dados->cargoServidor = (char*) malloc( dados->tamanhoCargo-1 * sizeof(char));
         }
-        fread(dados->cargoServidor, sizeof(char), dados->tamanhoCargo, bin);
+        fread(dados->cargoServidor, sizeof(char), dados->tamanhoCargo-1, bin);
     }else{
         dados->tamanhoCargo = 0;
         fseek(bin, -sizeof(char), SEEK_CUR);
@@ -295,11 +400,18 @@ void dadosGetCargo(DADOS* dados, FILE* bin){
     }
 }
 
+void dadosSetCargo(DADOS* dados, char* cargo){
+    strcpy(dados->cargoServidor, cargo);
+
+    dados->tamanhoCargo = strlen(dados->cargoServidor) + 1 + 1;     //Quantidade de caracteres, inclui \0
+                                                        //Exemplo: {o,i,\0} -> tamanho:2, quantidade de 'elementos':3
+}
+
 void dadosWriteCargo(DADOS *dados, FILE *bin) {
     if (dados->cargoServidor != NULL) {
         fwrite(&dados->tamanhoCargo, sizeof(int), 1, bin);
         fwrite(&dados->tagCargo, sizeof(char), 1,bin);
-        fwrite(dados->cargoServidor, sizeof(char), dados->tamanhoCargo, bin);
+        fwrite(dados->cargoServidor, sizeof(char), dados->tamanhoCargo-1, bin);
     }
 }
 
@@ -308,7 +420,7 @@ char* dadosReturnCargo(DADOS* dados){
 }
 
 int dadosReturnSizeCargo(DADOS* dados){
-    return dados->tamanhoCargo;
+    return dados->tamanhoCargo-1;
 }
 /*====================================================================================================================*/
 
