@@ -717,6 +717,99 @@ int main() {
 
             fclose(filebin4);
 
+
+            break;
+
+        case 5:
+
+            scanf("%s", filename);
+
+            scanf(" %d", &n);
+
+            // Alocar vetores de tamanho n para os campos
+            int* ids = (int*)malloc(n * sizeof(int));
+            double* salarios = (double*)malloc(n * sizeof(double));
+            char** telefones = (char**)malloc(n * sizeof(char*));
+            char** nomes = (char**)malloc(n * sizeof(char*));
+            char** cargos = (char**)malloc(n * sizeof(char*));
+
+            for (int i = 0; i < n; ++i) {
+                scanf("%s", valor);
+                ids[i] = atoi(valor);
+
+                scanf("%s", valor);
+                if(strcmp(valor,"NULO") == 0){
+                    salarios[i] = -1;
+                }else{
+                    salarios[i] = atof(valor);
+                }
+
+                telefones[i] = (char*)malloc(15 * sizeof(char));
+                scanf("%s", valor);
+                if(strcmp(valor,"NULO") == 0){
+                    strcpy(telefones[i], "\0@@@@@@@@@@@@@");
+                }else{
+                    strcpy(telefones[i], valor);
+                }
+
+                nomes[i] = (char*)malloc(80 * sizeof(char));
+                scan_quote_string(nomes[i]);
+
+                cargos[i] = (char*)malloc(80 * sizeof(char));
+                scan_quote_string(cargos[i]);
+
+            }
+
+            FILE* filebin5 = fopen(filename,"wb+");
+            if(filebin5 == NULL){
+                printf("Falha no processamento do arquivo.\n");
+                return -1;
+            }
+
+            if(!verificaConsistencia(filebin5)){
+                return -1;
+            }
+
+            for(int i = 0; i<n; i++){
+               DADOS* newRegistro = dadosCria();
+
+               dadosSetRemovido(newRegistro, '-');
+               dadosSetEncadeamentoLista(newRegistro, -1);
+               dadosSetId(newRegistro, ids[i]);
+               dadosSetSalario(newRegistro, salarios[i]);
+               dadosSetTelefone(newRegistro, telefones[i]);
+               dadosSetNome(newRegistro, nomes[i]);
+               dadosSetCargo(newRegistro, cargos[i]);
+               dadosUpdateTamReg(newRegistro);
+
+               removeLista(dadosReturnTamReg(newRegistro), filebin5); //Ja viu onde eh melhor inserir
+
+               //Agora pode escrever o registro.
+               dadosWriteRemovido(newRegistro, filebin5);
+               dadosWriteTamReg(newRegistro, filebin5);
+               dadosWriteEncadeamentoLista(newRegistro, filebin5);
+               dadosWriteId(newRegistro, filebin5);
+               dadosWriteSalario(newRegistro, filebin5);
+               dadosWriteTelefone(newRegistro, filebin5);
+               dadosWriteNome(newRegistro, filebin5);
+               dadosWriteCargo(newRegistro, filebin5);
+               
+               dadosApaga(newRegistro);
+            }
+
+            //Free fest
+            free(ids);
+            free(salarios);
+            for(int i=0; i<n; i++){
+                free(telefones[i]);
+                free(nomes[i]);
+                free(cargos[i]);
+            }
+            free(telefones);
+            free(nomes);
+            free(cargos);
+            break;
+
         default:
             opcao = 0;
     }

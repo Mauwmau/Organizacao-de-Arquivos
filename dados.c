@@ -192,7 +192,7 @@ void insereLista(DADOS* dados, long posDados, FILE* bin){
     fseek(bin, posDados, SEEK_SET); //Só pra voltar pra posicao do registro antes de entrar na funcao
 }
 
-long removeLista(DADOS* dados, FILE* bin){
+long removeLista(int tamDados, FILE *bin){
     long anterior = -1;
     long atual;
     long proximo;
@@ -203,7 +203,7 @@ long removeLista(DADOS* dados, FILE* bin){
     atual = ftell(bin);
     fread(&proximo, sizeof(long), 1, bin);
 
-    while(proximo != -1 && tamanhodoreg < dadosReturnTamReg(dados)){
+    while(proximo != -1 && tamanhodoreg < tamDados){
         fseek(bin , proximo, SEEK_SET);
         fseek(bin, -sizeof(int), SEEK_CUR);
         fread(&tamanhodoreg, sizeof(int), 1, bin);
@@ -212,9 +212,10 @@ long removeLista(DADOS* dados, FILE* bin){
         fread(&proximo, sizeof(long), 1, bin);
     }
 
-    if(tamanhodoreg != -1 && tamanhodoreg < dadosReturnTamReg(dados)){
+    if(tamanhodoreg != -1 && tamanhodoreg < tamDados){
         fseek(bin, anterior, SEEK_SET);
         fwrite(&proximo, sizeof(long), 1, bin);
+        fseek(bin, atual, SEEK_SET);
         return atual;
     }else{
         fseek(bin, 0, SEEK_END);
@@ -340,11 +341,21 @@ void dadosGetNome(DADOS* dados, FILE* bin){
 }
 
 void dadosSetNome(DADOS* dados, char* nome){
+    if(strcmp(nome, "") == 0){
+        return;
+    }
+
+    int nomesize = strlen(nome);
+
+    if(dados->nomeServidor == NULL){
+        dados->nomeServidor = (char*)malloc((nomesize + 1) * sizeof(char));
+    }
+
     strcpy(dados->nomeServidor, nome);
 
-    dados->tamanhoNome = strlen(dados->nomeServidor) + 1 + 1;   //Quantidade de caracteres, inclui \0
-                                                    //Exemplo: {o,i,\0} -> tamanho:2, quantidade de 'elementos':3
-                                                    // + tagNome
+    dados->tamanhoNome = nomesize + 1 + 1;   //Quantidade de caracteres, inclui \0
+                                                        //Exemplo: {o,i,\0} -> tamanho:2, quantidade de 'elementos':3
+                                                        // + tagNome
 }
 
 void dadosWriteNome(DADOS *dados, FILE *bin) {
@@ -401,10 +412,21 @@ void dadosGetCargo(DADOS* dados, FILE* bin){
 }
 
 void dadosSetCargo(DADOS* dados, char* cargo){
+    if(strcmp(cargo, "") == 0){
+        return;
+    }
+
+    int sizecargo = strlen(cargo);
+
+    if(dados->cargoServidor == NULL){
+        dados->cargoServidor = (char*) malloc((sizecargo+1) * sizeof(char));
+    }
+
     strcpy(dados->cargoServidor, cargo);
 
-    dados->tamanhoCargo = strlen(dados->cargoServidor) + 1 + 1;     //Quantidade de caracteres, inclui \0
-                                                        //Exemplo: {o,i,\0} -> tamanho:2, quantidade de 'elementos':3
+    dados->tamanhoCargo = sizecargo + 1 + 1;    //Quantidade de caracteres, inclui \0
+                                                //Exemplo: {o,i,\0} -> tamanho:2, quantidade de 'elementos':3
+                                                // + tagCampo
 }
 
 void dadosWriteCargo(DADOS *dados, FILE *bin) {
