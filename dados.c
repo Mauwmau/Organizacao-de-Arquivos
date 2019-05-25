@@ -148,48 +148,41 @@ long dadosReturnEncadeamentoLista(DADOS* dados){
 }
 
 void insereLista(DADOS* dados, long posDados, FILE* bin){
-    fseek(bin, sizeof(char), SEEK_SET); //Vai pro comeco do bin
-    long atual = ftell(bin);         //Pega a posicao de onde esta o topo lista
+    long atual;
     long proximo;
     long anterior = -1;
-    int tamanhodoreg = 9999;
-    fread(&proximo, sizeof(long), 1, bin);  //Lê o topo lista
+    int tamanhodoreg = -1;
 
-    //Enquanto nao achar o fim da lista, ou o
-    //tamanho do registro lido for menor que o registro
-    // a ser inserido
-    while (proximo != -1 && tamanhodoreg > dadosReturnTamReg(dados)){
-        fseek(bin, proximo, SEEK_SET);  //Vai pra posicao do proximo encadeamentoLista
-        fseek(bin, -sizeof(int), SEEK_CUR); //Volta o tamanho de um integer
-        fread(&tamanhodoreg, sizeof(int), 1, bin);  //Lê o integer tamanho do registro atual
-        anterior = atual;   //O anterior guarda a posicao do atual antes de ser atualizado
-        atual = ftell(bin);  //Marca a posicao do encadeamentoLista do registro atual
-        fread(&proximo, sizeof(long), 1, bin);  //Lê o encadeamentoLista para ir pro proximo
+    fseek(bin, sizeof(char), SEEK_SET);
+
+    atual = ftell(bin);
+    fread(&proximo, sizeof(long), 1, bin);
+
+    while(proximo != -1 && tamanhodoreg < dadosReturnTamReg(dados)){
+        fseek(bin , proximo, SEEK_SET);
+        fseek(bin, -sizeof(int), SEEK_CUR);
+        fread(&tamanhodoreg, sizeof(int), 1, bin);
+        anterior = atual;
+        atual = ftell(bin);
+        fread(&proximo, sizeof(long), 1, bin);
     }
-    if (tamanhodoreg > dadosReturnTamReg(dados)) {
-        //Encontrou alguem maior, insere no meio
-        fseek(bin, anterior, SEEK_SET);
+
+    if(tamanhodoreg != -1 && tamanhodoreg >= dadosReturnTamReg(dados)){
+        fseek(bin , anterior, SEEK_SET);
         fwrite(&posDados, sizeof(long), 1, bin);
 
+        dados->encadeamentoLista = atual;
+    }else{
         fseek(bin, atual, SEEK_SET);
-        fread(&proximo, sizeof(long), 1, bin);
+        fwrite(&posDados, sizeof(long), 1, bin);
 
         dados->encadeamentoLista = proximo;
-    } else {
-        //Não encontrou ninguem maior, insere no final
-
-        dados->encadeamentoLista = proximo;     //Guarda o encadeamentoLista do proximo registro no registro que deve ser
-        // inserido
-
-        fseek(bin, atual, SEEK_SET);             //Volta pra posicao encadeamentoLista do registro atual
-        fwrite(&posDados, sizeof(long), 1, bin);    //Guarda no atual o a posicao do que se deseja inserir
-
     }
 
-    fseek(bin, posDados, SEEK_SET);             //Vai pro registro inserido
-    dadosWriteEncadeamentoLista(dados, bin);    //Escreve no atual qual o seu encadeamentoLista(= proximo)
+    fseek(bin ,posDados, SEEK_SET);
+    dadosWriteEncadeamentoLista(dados, bin);
 
-    fseek(bin, posDados, SEEK_SET); //Só pra voltar pra posicao do registro antes de entrar na funcao
+    fseek(bin, posDados, SEEK_SET);
 }
 
 long removeLista(int tamDados, FILE *bin){
@@ -212,10 +205,14 @@ long removeLista(int tamDados, FILE *bin){
         fread(&proximo, sizeof(long), 1, bin);
     }
 
-    if(tamanhodoreg != -1 && tamanhodoreg < tamDados){
+    if(tamanhodoreg != -1 && tamanhodoreg >= tamDados){
         fseek(bin, anterior, SEEK_SET);
         fwrite(&proximo, sizeof(long), 1, bin);
         fseek(bin, atual, SEEK_SET);
+
+        //Vai pro comecinho do registro
+        fseek(bin, -sizeof(int), SEEK_CUR);
+        fseek(bin, -sizeof(char), SEEK_CUR);
         return atual;
     }else{
         fseek(bin, 0, SEEK_END);

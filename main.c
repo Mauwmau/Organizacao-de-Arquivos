@@ -103,6 +103,10 @@ int main() {
 
     scanf("%d", &opcao);
 
+    int n;
+    char nomeDoCampo[40];
+    char valor[80];
+
     switch(opcao){
         case 1:
             /* lê um csv
@@ -306,9 +310,6 @@ int main() {
 
             scanf("%s",filename);
 
-            char nomeDoCampo[40];
-            char valor[80];
-
             scanf("%s ",nomeDoCampo);
             scanf("%[^\n]",valor);
 
@@ -491,7 +492,6 @@ int main() {
 
         case 4:
 
-            int n;
             scanf("%s %d", filename, &n);
 
             char** valores = (char**) malloc(sizeof(char*) * n);    //Aloca um vetor de n strings
@@ -554,7 +554,7 @@ int main() {
                                     insereLista(registro, posEncad, filebin4);
 
                                     dadosGetEncadeamentoLista(registro,filebin4);   //Pula o encadeamentoLista, lendo ele
-                                    preencheBin(filebin4, dadosReturnTamReg(registro));
+                                    preencheBin(filebin4, dadosReturnTamReg(registro)-8);// Tamanho do registro - (tam)encadLista
                                     fseek(filebin4, posEncad, SEEK_SET);    //Volta pra posicao logo depois do campo tamanho
 
                                     fseek(filebin4, dadosReturnTamReg(registro), SEEK_CUR); //Pula pro fim do registro
@@ -585,7 +585,7 @@ int main() {
                                     insereLista(registro, posEncad, filebin4);
 
                                     dadosGetEncadeamentoLista(registro,filebin4);   //Pula o encadeamentoLista, lendo ele
-                                    preencheBin(filebin4, dadosReturnTamReg(registro));
+                                    preencheBin(filebin4, dadosReturnTamReg(registro)-8);
                                     fseek(filebin4, posEncad, SEEK_SET);    //Volta pra posicao logo depois do campo tamanho
 
                                     fseek(filebin4, dadosReturnTamReg(registro), SEEK_CUR); //Pula pro fim do registro
@@ -615,7 +615,7 @@ int main() {
                                     insereLista(registro, posEncad, filebin4);
 
                                     dadosGetEncadeamentoLista(registro,filebin4);   //Pula o encadeamentoLista, lendo ele
-                                    preencheBin(filebin4, dadosReturnTamReg(registro));
+                                    preencheBin(filebin4, dadosReturnTamReg(registro)-8);
                                     fseek(filebin4, posEncad, SEEK_SET);    //Volta pra posicao logo depois do campo tamanho
 
                                     fseek(filebin4, dadosReturnTamReg(registro), SEEK_CUR); //Pula pro fim do registro
@@ -647,7 +647,7 @@ int main() {
                                     insereLista(registro, posEncad, filebin4);
 
                                     dadosGetEncadeamentoLista(registro,filebin4);   //Pula o encadeamentoLista, lendo ele
-                                    preencheBin(filebin4, dadosReturnTamReg(registro));
+                                    preencheBin(filebin4, dadosReturnTamReg(registro)-8);
                                     fseek(filebin4, posEncad, SEEK_SET);    //Volta pra posicao logo depois do campo tamanho
 
                                     fseek(filebin4, dadosReturnTamReg(registro), SEEK_CUR); //Pula pro fim do registro
@@ -680,7 +680,7 @@ int main() {
                                     insereLista(registro, posEncad, filebin4);
 
                                     dadosGetEncadeamentoLista(registro,filebin4);   //Pula o encadeamentoLista, lendo ele
-                                    preencheBin(filebin4, dadosReturnTamReg(registro));
+                                    preencheBin(filebin4, dadosReturnTamReg(registro)-8);
                                     fseek(filebin4, posEncad, SEEK_SET);    //Volta pra posicao logo depois do campo tamanho
 
                                     fseek(filebin4, dadosReturnTamReg(registro), SEEK_CUR); //Pula pro fim do registro
@@ -793,7 +793,7 @@ int main() {
                dadosWriteTelefone(newRegistro, filebin5);
                dadosWriteNome(newRegistro, filebin5);
                dadosWriteCargo(newRegistro, filebin5);
-               
+
                dadosApaga(newRegistro);
             }
 
