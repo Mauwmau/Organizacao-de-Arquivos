@@ -170,8 +170,16 @@ void cabGetTopoLista(CAB* cabecalho, FILE* bin){
     fread(&cabecalho->topoLista, sizeof(long), 1, bin);
 }
 
+void cabSetTopoLista(CAB* cabecalho, long top){
+    cabecalho->topoLista = top;
+}
+
 void cabWriteTopoLista(CAB *cabecalho, FILE *bin) {
     fwrite(&cabecalho->topoLista,sizeof(long),1,bin);
+}
+
+long cabReturnTopoLista(CAB* cabecalho){
+    return cabecalho->topoLista;
 }
 /*====================================================================================================================*/
 
