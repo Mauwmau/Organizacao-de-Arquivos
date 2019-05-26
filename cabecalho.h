@@ -15,7 +15,6 @@ CAB* criaCabecalho();
 void apagaCabecalho(CAB*);
 
 void getCabecalho(CAB*,FILE* csv);
-
 void writeCabecalho(CAB*,FILE* bin);
 
 
