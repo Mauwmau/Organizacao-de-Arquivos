@@ -20,6 +20,13 @@ int verificaConsistencia(FILE* arquivo){
     }
 }
 
+void setConsistencia(FILE* arquivo, char stats){
+    long atual = ftell(arquivo);
+    fseek(arquivo,0,SEEK_SET);
+    fwrite(&stats, sizeof(char), 1, arquivo);
+    fseek(arquivo, atual, SEEK_SET);
+}
+
 long PosFimArquivo(FILE* arquivo){
     long atual = ftell(arquivo);
     fseek(arquivo,0,SEEK_END);
@@ -363,10 +370,13 @@ int main() {
 
                     long iniCampos = ftell(filebin3);
 
+                    int valorInt;
+                    double valorDouble;
+
                     switch(nCampo){
                         case 1:
+                            valorInt = atoi(valor);
                             dadosGetId(registro,filebin3);
-                            int valorInt = atoi(valor);
                             if(valorInt == dadosReturnId(registro)){
                                 fseek(filebin3, iniCampos, SEEK_SET);
                                 func3printCampos(cabeca,registro,filebin3);
@@ -385,9 +395,10 @@ int main() {
                             break;
 
                         case 2:
+                            valorDouble = atof(valor);
+
                             dadosGetId(registro,filebin3);
                             dadosGetSalario(registro,filebin3);
-                            double valorDouble = atof(valor);
                             if(valorDouble == dadosReturnSalario(registro)){
                                 fseek(filebin3, iniCampos, SEEK_SET);
                                 func3printCampos(cabeca,registro,filebin3);
@@ -488,6 +499,8 @@ int main() {
                 printf("Registro Inexistente.\n");
             }
 
+            fclose(filebin3);
+
             break;
 
         case 4:
@@ -517,6 +530,8 @@ int main() {
                 return -1;
             }
 
+            setConsistencia(filebin4, '0');
+
             for (int i=0; i<n; i++) {
 
                 //Pula pra segunda pagina
@@ -537,9 +552,12 @@ int main() {
                         dadosGetEncadeamentoLista(registro,filebin4);
                         long iniCampos = ftell(filebin4);
 
+                        double valorDouble;
+                        int valorInt;
+
                         switch (nCampos[i]){
                             case 1:
-                                int valorInt = atoi(valores[i]);
+                                valorInt = atoi(valores[i]);
                                 dadosGetId(registro,filebin4);
                                 if(dadosReturnId(registro) == valorInt){
                                     //Achou id
@@ -568,7 +586,7 @@ int main() {
                                 break;
 
                             case 2:
-                                double valorDouble = atof(valores[i]);
+                                valorDouble = atof(valores[i]);
                                 dadosGetId(registro,filebin4);
                                 dadosGetSalario(registro,filebin4);
                                 if(dadosReturnSalario(registro) == valorDouble){
@@ -706,6 +724,8 @@ int main() {
                 }
             }
 
+            setConsistencia(filebin4, '1');
+
             binarioNaTela1(filebin4);
 
             //Be free
@@ -760,7 +780,7 @@ int main() {
 
             }
 
-            FILE* filebin5 = fopen(filename,"wb+");
+            FILE* filebin5 = fopen(filename,"rb+");
             if(filebin5 == NULL){
                 printf("Falha no processamento do arquivo.\n");
                 return -1;
@@ -769,6 +789,8 @@ int main() {
             if(!verificaConsistencia(filebin5)){
                 return -1;
             }
+
+            setConsistencia(filebin5, '0');
 
             for(int i = 0; i<n; i++){
                DADOS* newRegistro = dadosCria();
@@ -782,7 +804,7 @@ int main() {
                dadosSetCargo(newRegistro, cargos[i]);
                dadosUpdateTamReg(newRegistro);
 
-               removeLista(dadosReturnTamReg(newRegistro), filebin5); //Ja viu onde eh melhor inserir
+               removeLista(newRegistro, filebin5); //Ja viu onde eh melhor inserir
 
                //Agora pode escrever o registro.
                dadosWriteRemovido(newRegistro, filebin5);
@@ -797,6 +819,10 @@ int main() {
                dadosApaga(newRegistro);
             }
 
+            setConsistencia(filebin5, '1');
+
+            binarioNaTela1(filebin5);
+
             //Free fest
             free(ids);
             free(salarios);
@@ -808,6 +834,202 @@ int main() {
             free(telefones);
             free(nomes);
             free(cargos);
+
+            fclose(filebin5);
+            break;
+
+        case 6:
+
+            scanf("%s %d",filename,&n);
+
+            int* toFind =(int*)malloc(n * sizeof(int));
+            char** findValue =(char**)malloc(n * sizeof(char*));
+            int* toUpdate =(int*)malloc(n * sizeof(int));
+            char** updateValue =(char**)malloc(n * sizeof(char*));
+
+            for(int i=0; i<n; i++){
+                scanf("%s", valor);
+                toFind[i] = campoSelector(valor);
+
+                findValue[i] = (char*)malloc(80 * sizeof(char));
+                scan_quote_string(findValue[i]);
+
+                scanf("%s",valor);
+                toUpdate[i] = campoSelector(valor);
+
+                updateValue[i] = (char*)malloc(80 * sizeof(char));
+                scan_quote_string(updateValue[i]);
+            }
+
+            FILE* filebin6 = fopen(filename, "rb+");
+            if(filebin6 == NULL){
+                printf("Falha no processamento do arquivo.\n");
+                return -1;
+            }
+
+            if(!verificaConsistencia(filebin6)){
+                return -1;
+            }
+
+            for(int i = 0; i<n; i++){
+                //Vai pra pagina de dados
+                fseek(filebin6, TAMPAG, SEEK_SET);
+
+                long final = PosFimArquivo(filebin6);
+                while(ftell(filebin6) < final){
+                    DADOS* registro = dadosCria();
+
+                    dadosGetRemovido(registro, filebin6);
+                    if(dadosReturnRemovido(registro) == '-'){
+
+                        dadosGetTamReg(registro, filebin6);
+                        long posTam = ftell(filebin6);
+
+                        dadosGetEncadeamentoLista(registro, filebin6);
+                        long iniCampos = ftell(filebin6);
+
+                        int valorInt;
+                        double valorDouble;
+
+                        switch(toFind[i]){
+                            case 1:
+                                valorInt = atoi(findValue[i]);
+
+                                dadosGetId(registro,filebin6);
+                                if(valorInt == dadosReturnId(registro)){
+                                    fseek(filebin6, iniCampos, SEEK_SET);
+                                    switch (toUpdate[i]){
+                                        case 1:
+                                            dadosSetId(registro, atoi(updateValue[i]));
+                                            dadosWriteId(registro,filebin6);
+                                            fseek(filebin6, posTam, SEEK_SET);
+                                            fseek(filebin6, dadosReturnTamReg(registro), SEEK_CUR);
+                                            break;
+
+                                        case 2:
+                                            dadosGetId(registro,filebin6);
+                                            dadosSetSalario(registro, atof(updateValue[i]));
+                                            dadosWriteSalario(registro, filebin6);
+                                            fseek(filebin6, posTam, SEEK_SET);
+                                            fseek(filebin6, dadosReturnTamReg(registro), SEEK_CUR);
+                                            break;
+
+                                        case 3:
+                                            dadosGetId(registro,filebin6);
+                                            dadosGetSalario(registro,filebin6);
+
+                                            if(strcmp(updateValue[i],"") == 0) {
+                                                dadosSetTelefone(registro, "\0@@@@@@@@@@@@@");
+                                            }else {
+                                                dadosSetTelefone(registro, updateValue[i]);
+                                            }
+
+                                            dadosWriteTelefone(registro, filebin6);
+
+                                            fseek(filebin6, posTam, SEEK_SET);
+                                            fseek(filebin6, dadosReturnTamReg(registro), SEEK_CUR);
+                                            break;
+
+                                        case 4:
+                                            dadosGetId(registro, filebin6);
+                                            dadosGetSalario(registro, filebin6);
+                                            dadosGetTelefone(registro, filebin6);
+                                            dadosGetNome(registro, filebin6);
+                                            if(dadosReturnSizeNome(registro) < strlen(updateValue[i])){
+
+                                            }
+                                            break;
+
+                                        case 5:
+                                            break;
+
+                                        default:
+                                            printf("Campo Invalido!\n");
+                                    }
+                                }else{
+                                    fseek(filebin6, posTam, SEEK_SET);
+                                    fseek(filebin6, dadosReturnTamReg(registro), SEEK_CUR);
+                                }
+                                break;
+
+                            case 2:
+                                valorDouble = atof(findValue[i]);
+
+                                dadosGetId(registro,filebin6);
+                                dadosGetSalario(registro,filebin6);
+                                if(valorDouble == dadosReturnSalario(registro)){
+
+                                }else{
+                                    fseek(filebin6, posTam, SEEK_SET);
+                                    fseek(filebin6, dadosReturnTamReg(registro), SEEK_CUR);
+                                }
+                                break;
+
+                            case 3:
+                                dadosGetId(registro,filebin6);
+                                dadosGetSalario(registro,filebin6);
+                                dadosGetTelefone(registro,filebin6);
+                                if(strcmp(findValue[i], dadosReturnTelefone(registro)) == 0){
+
+                                }else{
+                                    fseek(filebin6, posTam, SEEK_SET);
+                                    fseek(filebin6, dadosReturnTamReg(registro), SEEK_CUR);
+                                }
+                                break;
+
+                            case 4:
+                                dadosGetId(registro,filebin6);
+                                dadosGetSalario(registro,filebin6);
+                                dadosGetTelefone(registro,filebin6);
+                                dadosGetNome(registro,filebin6);
+
+                                if(dadosReturnNome(registro) != NULL && strcmp(findValue[i], dadosReturnNome(registro)) == 0){
+
+                                }else{
+                                    fseek(filebin6, posTam, SEEK_SET);
+                                    fseek(filebin6, dadosReturnTamReg(registro), SEEK_CUR);
+                                }
+                                break;
+
+                            case 5:
+                                dadosGetId(registro,filebin6);
+                                dadosGetSalario(registro,filebin6);
+                                dadosGetTelefone(registro,filebin6);
+                                dadosGetNome(registro,filebin6);
+                                dadosGetCargo(registro,filebin6);
+
+                                if(dadosReturnCargo(registro) != NULL && strcmp(findValue[i], dadosReturnCargo(registro)) == 0){
+
+                                }else{
+                                    fseek(filebin6, posTam, SEEK_SET);
+                                    fseek(filebin6, dadosReturnTamReg(registro), SEEK_CUR);
+                                }
+                                break;
+
+                            default:
+                                printf("Campo Invalido!\n");
+                                return -4;
+                        }
+
+                    }else if(dadosReturnRemovido(registro) == '*'){
+                        dadosGetTamReg(registro, filebin6);
+                        fseek(filebin6, dadosReturnTamReg(registro), SEEK_CUR);
+                    }
+
+                    dadosApaga(registro);
+                }
+            }
+
+            //More and more free's
+            for(int i=0; i<n; i++){
+                free(findValue[i]);
+                free(updateValue[i]);
+            }
+            free(toFind);
+            free(findValue);
+            free(toUpdate);
+            free(updateValue);
+
             break;
 
         default:

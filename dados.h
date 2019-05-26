@@ -40,7 +40,7 @@ void dadosGetEncadeamentoLista(DADOS* dados, FILE *bin);
 void dadosSetEncadeamentoLista(DADOS* dados, long encad);
 long dadosReturnEncadeamentoLista(DADOS* dados);
 void insereLista(DADOS* dados, long posDados, FILE* bin);
-long removeLista(int tamDados, FILE *bin);
+long removeLista(DADOS *dados, FILE *bin);
 
 void dadosReadId(DADOS* dados, FILE* csv);
 void dadosGetId(DADOS* dados, FILE* bin);

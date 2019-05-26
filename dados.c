@@ -185,7 +185,7 @@ void insereLista(DADOS* dados, long posDados, FILE* bin){
     fseek(bin, posDados, SEEK_SET);
 }
 
-long removeLista(int tamDados, FILE *bin){
+long removeLista(DADOS *dados, FILE *bin){
     long anterior = -1;
     long atual;
     long proximo;
@@ -196,7 +196,7 @@ long removeLista(int tamDados, FILE *bin){
     atual = ftell(bin);
     fread(&proximo, sizeof(long), 1, bin);
 
-    while(proximo != -1 && tamanhodoreg < tamDados){
+    while(proximo != -1 && tamanhodoreg < dadosReturnTamReg(dados)){
         fseek(bin , proximo, SEEK_SET);
         fseek(bin, -sizeof(int), SEEK_CUR);
         fread(&tamanhodoreg, sizeof(int), 1, bin);
@@ -205,10 +205,11 @@ long removeLista(int tamDados, FILE *bin){
         fread(&proximo, sizeof(long), 1, bin);
     }
 
-    if(tamanhodoreg != -1 && tamanhodoreg >= tamDados){
+    if(tamanhodoreg != -1 && tamanhodoreg >= dadosReturnTamReg(dados)){
         fseek(bin, anterior, SEEK_SET);
         fwrite(&proximo, sizeof(long), 1, bin);
         fseek(bin, atual, SEEK_SET);
+        dados->tamanhoRegistro = tamanhodoreg;// Eh pq tem q considerar o lixo q vai ficar tb
 
         //Vai pro comecinho do registro
         fseek(bin, -sizeof(int), SEEK_CUR);
